@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>لعبة الكلمات - شبكة ديناميكية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #0d1b2a; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        #app-container {
+            width: 100%;
+            max-width: 420px;
+            height: 100vh;
+            max-height: 900px;
+            background: linear-gradient(180deg, #0f4c75 0%, #1b262c 100%);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        #levels-container {
+            overflow-y: auto;
+            max-height: 80vh;
+            padding-bottom: 30px;
+        }
+        
+        #levels-container::-webkit-scrollbar { width: 6px; }
+        #levels-container::-webkit-scrollbar-thumb { background-color: #3282b8; border-radius: 10px; }
+
+        .level-btn {
+            background-color: #3282b8;
+            border-bottom: 5px solid #205c87;
+            border-radius: 12px;
+            color: #ffffff;
+            font-weight: 900;
+            font-size: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80px;
+            transition: all 0.1s;
+            cursor: pointer;
+        }
+        .level-btn:active {
+            transform: translateY(5px);
+            border-bottom-width: 0px;
+        }
+
+        /* شبكة الحروف الديناميكية */
+        #letters-grid {
+            touch-action: none; 
+            display: grid;
+            background-color: transparent;
+            padding: 6px;
+            border-radius: 12px;
+            width: 100%;
+            margin: 0 auto;
+            justify-content: center;
+            align-content: center;
+        }
+
+        .letter-btn {
+            background-color: #f1f5f9;
+            color: #0f4c75;
+            border-radius: 10px;
+            font-weight: 900;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #cbd5e1;
+            transition: transform 0.1s, box-shadow 0.1s, background-color 0.2s, color 0.2s;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+        }
+
+        .letter-btn:active, .letter-btn.selected {
+            transform: translateY(3px) scale(0.96);
+            box-shadow: 0 0 0 transparent;
+        }
+
+        .letter-btn.selected {
+            background-color: #fcd34d;
+            color: #78350f;
+            box-shadow: 0 4px 0 #d97706;
+        }
+
+        /* المربعات الفارغة (التي لا تحتوي على حروف) */
+        .letter-btn.empty-cell {
+            background-color: rgba(255, 255, 255, 0.08); /* لون شفاف قليلاً للمربع */
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3); /* ظل داخلي ليعطي شكل الحفرة/المربع الفارغ */
+            color: transparent;
+            pointer-events: none; /* لمنع التفاعل معها */
+        }
+
+        /* أنماط الحروف عند حلها (تبقى في مكانها وتأخذ لون الكلمة) */
+        .letter-btn.solved-0 { background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%); color: #052e16; box-shadow: 0 4px 0 #16a34a; pointer-events: none; }
+        .letter-btn.solved-1 { background: linear-gradient(180deg, #f472b6 0%, #db2777 100%); color: #4c0519; box-shadow: 0 4px 0 #be185d; pointer-events: none; }
+        .letter-btn.solved-2 { background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%); color: #0f172a; box-shadow: 0 4px 0 #1d4ed8; pointer-events: none; }
+        .letter-btn.solved-3 { background: linear-gradient(180deg, #c084fc 0%, #9333ea 100%); color: #2e1065; box-shadow: 0 4px 0 #7e22ce; pointer-events: none; }
+        .letter-btn.solved-4 { background: linear-gradient(180deg, #fb923c 0%, #ea580c 100%); color: #431407; box-shadow: 0 4px 0 #c2410c; pointer-events: none; }
+
+
+        /* منطقة الكلمات المطلوبة */
+        #words-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 4px 12px;
+            min-height: 48px;
+            margin-top: 4px;
+            margin-bottom: 8px;
+        }
+
+        .word-group {
+            display: inline-flex;
+            flex-direction: row-reverse;
+            gap: 3px;
+            background-color: rgba(15, 30, 45, 0.75);
+            padding: 4px 6px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .word-slot {
+            width: 25px;
+            height: 29px;
+            background-color: #1a3347;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: transparent;
+            font-weight: 800;
+            font-size: 1rem;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            70% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        /* أنماط الكلمات المحلولة (بالأعلى) */
+        .word-group.solved-0 { background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%); border-color: #86efac; box-shadow: 0 3px 8px rgba(34, 197, 94, 0.35); animation: popIn 0.3s ease; }
+        .word-group.solved-0 .word-slot { background: transparent; color: #052e16; box-shadow: none; width: auto; min-width: 16px; font-weight: 900; }
+
+        .word-group.solved-1 { background: linear-gradient(180deg, #f472b6 0%, #db2777 100%); border-color: #fbcfe8; box-shadow: 0 3px 8px rgba(219, 39, 119, 0.35); animation: popIn 0.3s ease; }
+        .word-group.solved-1 .word-slot { background: transparent; color: #4c0519; box-shadow: none; width: auto; min-width: 16px; font-weight: 900; }
+
+        .word-group.solved-2 { background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%); border-color: #bfdbfe; box-shadow: 0 3px 8px rgba(37, 99, 235, 0.35); animation: popIn 0.3s ease; }
+        .word-group.solved-2 .word-slot { background: transparent; color: #0f172a; box-shadow: none; width: auto; min-width: 16px; font-weight: 900; }
+
+        .word-group.solved-3 { background: linear-gradient(180deg, #c084fc 0%, #9333ea 100%); border-color: #f3e8ff; box-shadow: 0 3px 8px rgba(147, 51, 234, 0.35); animation: popIn 0.3s ease; }
+        .word-group.solved-3 .word-slot { background: transparent; color: #2e1065; box-shadow: none; width: auto; min-width: 16px; font-weight: 900; }
+
+        .word-group.solved-4 { background: linear-gradient(180deg, #fb923c 0%, #ea580c 100%); border-color: #ffedd5; box-shadow: 0 3px 8px rgba(234, 88, 12, 0.35); animation: popIn 0.3s ease; }
+        .word-group.solved-4 .word-slot { background: transparent; color: #431407; box-shadow: none; width: auto; min-width: 16px; font-weight: 900; }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+        }
+        .screen.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        
+        <!-- خريطة المراحل -->
+        <div id="level-select-screen" class="screen active p-4">
+            <h1 class="text-4xl font-black text-white text-center mt-8 mb-6 drop-shadow-lg text-blue-200">خريطة المراحل</h1>
+            <div id="levels-container" class="grid grid-cols-3 gap-3 px-1">
+                <!-- الأزرار تتولد برمجياً -->
+            </div>
+        </div>
+
+        <!-- شاشة اللعب -->
+        <div id="game-screen" class="screen flex-col h-full">
+            
+            <div class="flex justify-between items-center p-4 text-white font-bold text-lg z-10 shrink-0">
+                <div class="w-12"></div>
+                <div id="level-display" class="text-3xl drop-shadow-md font-black text-blue-200">مرحلة 1</div>
+                <button onclick="showLevelSelect()" class="w-12 h-12 bg-blue-400 rounded-full flex items-center justify-center border-4 border-blue-200 shadow-lg text-white text-2xl transition-transform active:scale-95">
+                    🗺️
+                </button>
+            </div>
+
+            <!-- صورة اللغز -->
+            <div class="w-full px-4 flex justify-center items-center mt-2 z-10 h-32 shrink-0">
+                <img id="puzzle-image" src="" alt="صورة اللغز" class="max-w-full max-h-full object-contain filter drop-shadow-xl rounded-xl border-2 border-white/10 bg-white/5">
+            </div>
+
+            <!-- الكلمات المطلوبة -->
+            <div id="words-container">
+            </div>
+
+            <!-- شبكة الحروف الديناميكية -->
+            <div class="px-3 pb-6 flex-grow flex flex-col justify-center items-center w-full">
+                <div id="letters-grid">
+                    <!-- الحروف تتولد برمجياً -->
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        /************************************************************************
+         * بيانات المراحل
+         ************************************************************************/
+        const levelsData = [
+            { id: 1, image: "1.png", words: ["ماستر", "راتب"] },
+            { id: 2, image: "image_3d675b.jpg", words: ["مرساة", "سفينة", "بحر"] },
+            { id: 3, image: "https://placehold.co/400x300/475569/ffffff?text=الحاسوب", words: ["شاشة", "لوحة", "مفتاح"] },
+            { id: 4, image: "https://placehold.co/400x300/0f172a/ffffff?text=الفضاء", words: ["كوكب", "نجم", "مجرة"] },
+            { id: 5, image: "https://placehold.co/400x300/1e1b4b/ffffff?text=العلوم", words: ["فيزياء", "طاقة", "حركة"] },
+            { id: 6, image: "https://placehold.co/400x300/312e81/ffffff?text=مرحلة+6", words: ["نار", "حطب", "دفء"] },
+            { id: 7, image: "https://placehold.co/400x300/1e3a8a/ffffff?text=مرحلة+7", words: ["طائر", "ريش", "سماء"] },
+            { id: 8, image: "https://placehold.co/400x300/172554/ffffff?text=مرحلة+8", words: ["كتاب", "قراءة", "علم"] },
+            { id: 9, image: "https://placehold.co/400x300/064e3b/ffffff?text=مرحلة+9", words: ["شجرة", "جذر", "ساق"] },
+            { id: 10, image: "https://placehold.co/400x300/451a03/ffffff?text=مرحلة+10", words: ["صحراء", "جمل", "رمل"] }
+        ];
+
+        let currentLevelIndex = 0; 
+        let generatedGrid = [];   
+        let foundWords = [];      
+        let solvedCells = [];     
+        
+        let gridRows = 0;
+        let gridCols = 0;
+
+        let isDragging = false;
+        let selectedPath = [];    
+
+        const screenSelect = document.getElementById('level-select-screen');
+        const screenGame = document.getElementById('game-screen');
+        const levelsContainer = document.getElementById('levels-container');
+        const lettersGrid = document.getElementById('letters-grid');
+        const wordsContainer = document.getElementById('words-container');
+
+        function showLevelSelect() {
+            screenGame.classList.remove('active');
+            screenSelect.classList.add('active');
+            const popup = document.getElementById('success-popup');
+            if (popup) popup.remove();
+        }
+
+        function renderLevelSelect() {
+            levelsContainer.innerHTML = '';
+            levelsData.forEach((level, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'level-btn shadow-md text-xl';
+                btn.innerText = `${index + 1}`; 
+                btn.onclick = () => loadLevel(index);
+                levelsContainer.appendChild(btn);
+            });
+        }
+
+        function loadLevel(index) {
+            if (index < 0 || index >= levelsData.length) return;
+            currentLevelIndex = index;
+            const level = levelsData[currentLevelIndex];
+
+            foundWords = [];
+            solvedCells = [];
+            selectedPath = [];
+            isDragging = false;
+
+            document.getElementById('level-display').innerText = `مرحلة ${currentLevelIndex + 1}`;
+            document.getElementById('puzzle-image').src = level.image;
+            
+            generateDynamicGrid(level.words);
+            renderWordSlots();
+            renderGridUI();
+
+            screenSelect.classList.remove('active');
+            screenGame.classList.add('active');
+        }
+
+        function generateDynamicGrid(words) {
+            let totalChars = words.reduce((sum, word) => sum + word.length, 0);
+            
+            gridCols = Math.ceil(Math.sqrt(totalChars));
+            gridRows = Math.ceil(totalChars / gridCols);
+
+            let maxAttempts = 1000;
+            let success = false;
+
+            while (maxAttempts > 0 && !success) {
+                generatedGrid = Array(gridRows).fill(null).map(() => Array(gridCols).fill(null));
+                
+                if (placeAllWordsDFS(words, 0)) {
+                    success = true;
+                } else {
+                    maxAttempts--;
+                    if (maxAttempts === 500) gridCols++;
+                    if (maxAttempts === 200) gridRows++;
+                }
+            }
+
+            if (!success) {
+                fallbackPlacement(words);
+            }
+        }
+
+        function placeAllWordsDFS(wordsList, wordIndex) {
+            if (wordIndex === wordsList.length) return true;
+            
+            let word = wordsList[wordIndex];
+            let emptyCells = [];
+            
+            for(let r = 0; r < gridRows; r++) {
+                for(let c = 0; c < gridCols; c++) {
+                    if(generatedGrid[r][c] === null) emptyCells.push({r, c});
+                }
+            }
+            
+            emptyCells.sort(() => Math.random() - 0.5);
+
+            for(let start of emptyCells) {
+                let path = [];
+                if(placeWordLetters(word, 0, start.r, start.c, path)) {
+                    if(placeAllWordsDFS(wordsList, wordIndex + 1)) {
+                        return true;
+                    }
+                    for(let p of path) {
+                        generatedGrid[p.r][p.c] = null;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function placeWordLetters(word, charIndex, r, c, path) {
+            if (charIndex === word.length) return true;
+            if (r < 0 || r >= gridRows || c < 0 || c >= gridCols || generatedGrid[r][c] !== null) return false;
+
+            generatedGrid[r][c] = word[charIndex];
+            path.push({r, c});
+
+            let dirs = [[0,1], [0,-1], [1,0], [-1,0]].sort(() => Math.random() - 0.5);
+            
+            for(let d of dirs) {
+                if (placeWordLetters(word, charIndex + 1, r + d[0], c + d[1], path)) {
+                    return true;
+                }
+            }
+
+            generatedGrid[r][c] = null;
+            path.pop();
+            return false;
+        }
+
+        function fallbackPlacement(words) {
+            generatedGrid = Array(gridRows).fill(null).map(() => Array(gridCols).fill(null));
+            let i = 0;
+            words.forEach(word => {
+                for(let char of word) {
+                    if (Math.floor(i / gridCols) < gridRows) {
+                        generatedGrid[Math.floor(i / gridCols)][i % gridCols] = char;
+                    }
+                    i++;
+                }
+            });
+        }
+
+        function renderWordSlots() {
+            wordsContainer.innerHTML = '';
+            const currentLevel = levelsData[currentLevelIndex];
+            
+            currentLevel.words.forEach((word, wordIndex) => {
+                const isFound = foundWords.includes(word);
+                
+                const wordGroup = document.createElement('div');
+                wordGroup.className = 'word-group' + (isFound ? ` solved-${wordIndex % 5}` : '');
+
+                for (let i = 0; i < word.length; i++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'word-slot';
+                    if (isFound) {
+                        slot.innerText = word[i];
+                    }
+                    wordGroup.appendChild(slot);
+                }
+                wordsContainer.appendChild(wordGroup);
+            });
+        }
+
+        function renderGridUI() {
+            lettersGrid.innerHTML = '';
+            lettersGrid.style.gridTemplateColumns = `repeat(${gridCols}, minmax(0, 1fr))`;
+
+            const dynamicGap = gridCols > 5 ? 5 : 7;
+            const dynamicFontSize = gridCols >= 6 ? '1.25rem' : gridCols >= 5 ? '1.45rem' : '1.75rem';
+            
+            lettersGrid.style.gap = `${dynamicGap}px`;
+
+            const maxGridWidth = Math.min(390, gridCols * 64);
+            lettersGrid.style.maxWidth = `${maxGridWidth}px`;
+
+            for (let r = 0; r < gridRows; r++) {
+                for (let c = 0; c < gridCols; c++) {
+                    const index = r * gridCols + c;
+                    const char = generatedGrid[r][c];
+                    
+                    const btn = document.createElement('div');
+                    btn.dataset.index = index;
+                    btn.id = `cell-${index}`;
+                    btn.style.fontSize = dynamicFontSize;
+                    
+                    if (char !== null) {
+                        btn.className = 'letter-btn';
+                        btn.innerText = char;
+                    } else {
+                        // إظهار المربعات الفارغة الشفافة بدلاً من إخفائها كلياً
+                        btn.className = 'letter-btn empty-cell'; 
+                    }
+                    lettersGrid.appendChild(btn);
+                }
+            }
+        }
+
+        function getCellFromEvent(e) {
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            const element = document.elementFromPoint(clientX, clientY);
+            // التأكد من أن المربع يحتوي على حرف وليس مربعاً فارغاً (empty-cell)
+            if (element && element.classList.contains('letter-btn') && !element.classList.contains('empty-cell')) {
+                return parseInt(element.dataset.index);
+            }
+            return null;
+        }
+
+        function isAdjacent(index1, index2) {
+            const r1 = Math.floor(index1 / gridCols);
+            const c1 = index1 % gridCols;
+            const r2 = Math.floor(index2 / gridCols);
+            const c2 = index2 % gridCols;
+            return (Math.abs(r1 - r2) === 1 && c1 === c2) || (Math.abs(c1 - c2) === 1 && r1 === r2);
+        }
+
+        function startDrag(e) {
+            const index = getCellFromEvent(e);
+            if (index !== null && !solvedCells.includes(index)) {
+                isDragging = true;
+                selectedPath = [index];
+                updateGridVisuals();
+            }
+        }
+
+        function moveDrag(e) {
+            if (!isDragging) return;
+            e.preventDefault(); 
+            
+            const index = getCellFromEvent(e);
+            if (index !== null && !solvedCells.includes(index)) {
+                const lastIndex = selectedPath[selectedPath.length - 1];
+                
+                if (index !== lastIndex) {
+                    if (selectedPath.length > 1 && selectedPath[selectedPath.length - 2] === index) {
+                        selectedPath.pop();
+                        updateGridVisuals();
+                    } 
+                    else if (isAdjacent(lastIndex, index) && !selectedPath.includes(index)) {
+                        selectedPath.push(index);
+                        updateGridVisuals();
+                    }
+                }
+            }
+        }
+
+        function endDrag(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            checkSelectedWord();
+            selectedPath = [];
+            updateGridVisuals();
+        }
+
+        function updateGridVisuals() {
+            const cells = lettersGrid.querySelectorAll('.letter-btn:not(.empty-cell)');
+            cells.forEach((cell, idx) => {
+                cell.classList.remove('selected');
+                // تلوين المسار المحدد
+                if (selectedPath.includes(parseInt(cell.dataset.index))) {
+                    cell.classList.add('selected');
+                }
+            });
+        }
+
+        function checkSelectedWord() {
+            if (selectedPath.length === 0) return;
+            
+            let currentWord = selectedPath.map(idx => {
+                const r = Math.floor(idx / gridCols);
+                const c = idx % gridCols;
+                return generatedGrid[r][c];
+            }).join('');
+            
+            const currentLevel = levelsData[currentLevelIndex];
+            const wordIndex = currentLevel.words.indexOf(currentWord);
+
+            if (wordIndex !== -1 && !foundWords.includes(currentWord)) {
+                foundWords.push(currentWord);
+                
+                selectedPath.forEach(idx => {
+                    solvedCells.push(idx);
+                    const cellEl = document.getElementById(`cell-${idx}`);
+                    // إضافة صنف التلوين بدلاً من الإخفاء
+                    cellEl.classList.add(`solved-${wordIndex % 5}`); 
+                    cellEl.classList.remove('selected');
+                });
+                
+                renderWordSlots();
+
+                if (foundWords.length === currentLevel.words.length) {
+                    setTimeout(() => showSuccessMessage(), 500);
+                }
+            }
+        }
+
+        function showSuccessMessage() {
+            const isLastLevel = (currentLevelIndex === levelsData.length - 1);
+            const buttonText = isLastLevel ? "العودة للخريطة" : "التالي";
+            
+            const msgBox = document.createElement('div');
+            msgBox.id = 'success-popup';
+            msgBox.className = 'fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-50';
+            msgBox.innerHTML = `
+                <div class="bg-[#1b262c] border-4 border-[#4ade80] text-center p-8 rounded-2xl shadow-2xl transform scale-100 transition-transform w-11/12 max-w-sm">
+                    <h2 class="text-4xl font-black text-[#4ade80] mb-4">أحسنت!</h2>
+                    <p class="text-xl font-bold text-white mb-8">اكتملت المرحلة ${currentLevelIndex + 1}</p>
+                    <button id="next-btn" class="bg-[#3282b8] text-white px-8 py-3 rounded-xl font-black text-2xl w-full shadow-lg border-b-4 border-[#205c87] active:border-b-0 active:translate-y-1">
+                        ${buttonText}
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(msgBox);
+
+            document.getElementById('next-btn').onclick = () => {
+                msgBox.remove();
+                if (isLastLevel) {
+                    showLevelSelect();
+                } else {
+                    loadLevel(currentLevelIndex + 1);
+                }
+            };
+        }
+
+        // Event Listeners
+        lettersGrid.addEventListener('mousedown', startDrag);
+        window.addEventListener('mousemove', moveDrag);
+        window.addEventListener('mouseup', endDrag);
+
+        lettersGrid.addEventListener('touchstart', startDrag, {passive: false});
+        lettersGrid.addEventListener('touchmove', moveDrag, {passive: false});
+        window.addEventListener('touchend', endDrag);
+        window.addEventListener('touchcancel', endDrag);
+
+        window.onload = () => {
+            renderLevelSelect();
+            showLevelSelect(); 
+        };
+
+    </script>
+</body>
+</html>
