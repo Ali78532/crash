@@ -91,32 +91,29 @@
             aspect-ratio: 1 / 1;
         }
 
+        /* المربعات الفارغة (نفس الشكل بدون تفاعل) */
+        .letter-btn.empty-cell {
+            pointer-events: none;
+            cursor: default;
+        }
+
         .letter-btn:active, .letter-btn.selected {
             transform: translateY(3px) scale(0.96);
             box-shadow: 0 0 0 transparent;
         }
 
         .letter-btn.selected {
-            background-color: #fcd34d;
-            color: #78350f;
-            box-shadow: 0 4px 0 #d97706;
+            background-color: #fcd34d !important;
+            color: #78350f !important;
+            box-shadow: 0 4px 0 #d97706 !important;
         }
 
-        /* المربعات الفارغة (التي لا تحتوي على حروف) */
-        .letter-btn.empty-cell {
-            background-color: rgba(255, 255, 255, 0.08); /* لون شفاف قليلاً للمربع */
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3); /* ظل داخلي ليعطي شكل الحفرة/المربع الفارغ */
-            color: transparent;
-            pointer-events: none; /* لمنع التفاعل معها */
-        }
-
-        /* أنماط الحروف عند حلها (تبقى في مكانها وتأخذ لون الكلمة) */
-        .letter-btn.solved-0 { background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%); color: #052e16; box-shadow: 0 4px 0 #16a34a; pointer-events: none; }
-        .letter-btn.solved-1 { background: linear-gradient(180deg, #f472b6 0%, #db2777 100%); color: #4c0519; box-shadow: 0 4px 0 #be185d; pointer-events: none; }
-        .letter-btn.solved-2 { background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%); color: #0f172a; box-shadow: 0 4px 0 #1d4ed8; pointer-events: none; }
-        .letter-btn.solved-3 { background: linear-gradient(180deg, #c084fc 0%, #9333ea 100%); color: #2e1065; box-shadow: 0 4px 0 #7e22ce; pointer-events: none; }
-        .letter-btn.solved-4 { background: linear-gradient(180deg, #fb923c 0%, #ea580c 100%); color: #431407; box-shadow: 0 4px 0 #c2410c; pointer-events: none; }
-
+        /* ألوان الحروف بعد حلها (تتطابق مع ألوان الكبسولات) */
+        .letter-btn.found-0 { background: #4ade80; color: #052e16; box-shadow: 0 4px 0 #16a34a; pointer-events: none; }
+        .letter-btn.found-1 { background: #f472b6; color: #4c0519; box-shadow: 0 4px 0 #db2777; pointer-events: none; }
+        .letter-btn.found-2 { background: #60a5fa; color: #0f172a; box-shadow: 0 4px 0 #2563eb; pointer-events: none; }
+        .letter-btn.found-3 { background: #c084fc; color: #2e1065; box-shadow: 0 4px 0 #9333ea; pointer-events: none; }
+        .letter-btn.found-4 { background: #fb923c; color: #431407; box-shadow: 0 4px 0 #ea580c; pointer-events: none; }
 
         /* منطقة الكلمات المطلوبة */
         #words-container {
@@ -124,39 +121,40 @@
             flex-wrap: wrap;
             justify-content: center;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             width: 100%;
-            padding: 4px 12px;
-            min-height: 48px;
-            margin-top: 4px;
-            margin-bottom: 8px;
+            padding: 2px 12px;
+            min-height: 35px;
+            margin-bottom: 6px;
         }
 
-        .word-group {
+        /* شكل الكلمة (كبسولة صغيرة) */
+        .word-capsule {
             display: inline-flex;
-            flex-direction: row-reverse;
-            gap: 3px;
-            background-color: rgba(15, 30, 45, 0.75);
-            padding: 4px 6px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            padding: 2px 12px;
+            border-radius: 9999px;
+            font-weight: 900;
+            font-size: 0.95rem;
+            min-height: 28px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .word-slot {
-            width: 25px;
-            height: 29px;
+        .word-capsule.unsolved {
+            background-color: rgba(15, 30, 45, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+            gap: 4px;
+            padding: 2px 8px;
+        }
+
+        .empty-slot {
+            width: 10px;
+            height: 10px;
             background-color: #1a3347;
-            border-radius: 6px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: transparent;
-            font-weight: 800;
-            font-size: 1rem;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);
-            transition: all 0.3s ease;
+            border-radius: 3px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
         }
 
         @keyframes popIn {
@@ -165,21 +163,12 @@
             100% { transform: scale(1); }
         }
 
-        /* أنماط الكلمات المحلولة (بالأعلى) */
-        .word-group.solved-0 { background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%); border-color: #86efac; box-shadow: 0 3px 8px rgba(34, 197, 94, 0.35); animation: popIn 0.3s ease; }
-        .word-group.solved-0 .word-slot { background: transparent; color: #052e16; box-shadow: none; width: auto; min-width: 16px; font-weight: 900; }
-
-        .word-group.solved-1 { background: linear-gradient(180deg, #f472b6 0%, #db2777 100%); border-color: #fbcfe8; box-shadow: 0 3px 8px rgba(219, 39, 119, 0.35); animation: popIn 0.3s ease; }
-        .word-group.solved-1 .word-slot { background: transparent; color: #4c0519; box-shadow: none; width: auto; min-width: 16px; font-weight: 900; }
-
-        .word-group.solved-2 { background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%); border-color: #bfdbfe; box-shadow: 0 3px 8px rgba(37, 99, 235, 0.35); animation: popIn 0.3s ease; }
-        .word-group.solved-2 .word-slot { background: transparent; color: #0f172a; box-shadow: none; width: auto; min-width: 16px; font-weight: 900; }
-
-        .word-group.solved-3 { background: linear-gradient(180deg, #c084fc 0%, #9333ea 100%); border-color: #f3e8ff; box-shadow: 0 3px 8px rgba(147, 51, 234, 0.35); animation: popIn 0.3s ease; }
-        .word-group.solved-3 .word-slot { background: transparent; color: #2e1065; box-shadow: none; width: auto; min-width: 16px; font-weight: 900; }
-
-        .word-group.solved-4 { background: linear-gradient(180deg, #fb923c 0%, #ea580c 100%); border-color: #ffedd5; box-shadow: 0 3px 8px rgba(234, 88, 12, 0.35); animation: popIn 0.3s ease; }
-        .word-group.solved-4 .word-slot { background: transparent; color: #431407; box-shadow: none; width: auto; min-width: 16px; font-weight: 900; }
+        /* ألوان الكبسولات */
+        .word-capsule.solved-0 { background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%); color: #052e16; border: 1px solid #86efac; box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3); animation: popIn 0.3s ease; }
+        .word-capsule.solved-1 { background: linear-gradient(180deg, #f472b6 0%, #db2777 100%); color: #4c0519; border: 1px solid #fbcfe8; box-shadow: 0 2px 6px rgba(219, 39, 119, 0.3); animation: popIn 0.3s ease; }
+        .word-capsule.solved-2 { background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%); color: #0f172a; border: 1px solid #bfdbfe; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3); animation: popIn 0.3s ease; }
+        .word-capsule.solved-3 { background: linear-gradient(180deg, #c084fc 0%, #9333ea 100%); color: #2e1065; border: 1px solid #f3e8ff; box-shadow: 0 2px 6px rgba(147, 51, 234, 0.3); animation: popIn 0.3s ease; }
+        .word-capsule.solved-4 { background: linear-gradient(180deg, #fb923c 0%, #ea580c 100%); color: #431407; border: 1px solid #ffedd5; box-shadow: 0 2px 6px rgba(234, 88, 12, 0.3); animation: popIn 0.3s ease; }
 
         .screen {
             display: none;
@@ -190,59 +179,73 @@
         .screen.active {
             display: flex;
         }
+
+        #game-layout {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            justify-content: space-between;
+        }
+
+        #top-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0; 
+        }
+        
+        #bottom-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding-bottom: 20px;
+        }
     </style>
 </head>
 <body>
 
     <div id="app-container">
         
-        <!-- خريطة المراحل -->
         <div id="level-select-screen" class="screen active p-4">
             <h1 class="text-4xl font-black text-white text-center mt-8 mb-6 drop-shadow-lg text-blue-200">خريطة المراحل</h1>
             <div id="levels-container" class="grid grid-cols-3 gap-3 px-1">
-                <!-- الأزرار تتولد برمجياً -->
             </div>
         </div>
 
-        <!-- شاشة اللعب -->
-        <div id="game-screen" class="screen flex-col h-full">
-            
-            <div class="flex justify-between items-center p-4 text-white font-bold text-lg z-10 shrink-0">
-                <div class="w-12"></div>
-                <div id="level-display" class="text-3xl drop-shadow-md font-black text-blue-200">مرحلة 1</div>
-                <button onclick="showLevelSelect()" class="w-12 h-12 bg-blue-400 rounded-full flex items-center justify-center border-4 border-blue-200 shadow-lg text-white text-2xl transition-transform active:scale-95">
-                    🗺️
-                </button>
-            </div>
+        <div id="game-screen" class="screen h-full">
+            <div id="game-layout">
+                
+                <div id="top-section">
+                    <div class="flex justify-between items-center p-4 text-white font-bold text-lg z-10 shrink-0">
+                        <div class="w-12"></div>
+                        <div id="level-display" class="text-3xl drop-shadow-md font-black text-blue-200">مرحلة 1</div>
+                        <button onclick="showLevelSelect()" class="w-12 h-12 bg-blue-400 rounded-full flex items-center justify-center border-4 border-blue-200 shadow-lg text-white text-2xl transition-transform active:scale-95">
+                            🗺️
+                        </button>
+                    </div>
 
-            <!-- صورة اللغز -->
-            <div class="w-full px-4 flex justify-center items-center mt-2 z-10 h-32 shrink-0">
-                <img id="puzzle-image" src="" alt="صورة اللغز" class="max-w-full max-h-full object-contain filter drop-shadow-xl rounded-xl border-2 border-white/10 bg-white/5">
-            </div>
-
-            <!-- الكلمات المطلوبة -->
-            <div id="words-container">
-            </div>
-
-            <!-- شبكة الحروف الديناميكية -->
-            <div class="px-3 pb-6 flex-grow flex flex-col justify-center items-center w-full">
-                <div id="letters-grid">
-                    <!-- الحروف تتولد برمجياً -->
+                    <div class="w-full px-4 flex justify-center items-center flex-grow p-2 overflow-hidden">
+                        <img id="puzzle-image" src="" alt="صورة اللغز" class="max-w-full max-h-full object-contain filter drop-shadow-xl rounded-xl border-2 border-white/10 bg-white/5">
+                    </div>
                 </div>
-            </div>
 
+                <div id="bottom-section" class="px-3">
+                    <div id="words-container"></div>
+                    <div class="flex flex-col justify-center items-center w-full mt-2">
+                        <div id="letters-grid"></div>
+                    </div>
+                </div>
+
+            </div>
         </div>
 
     </div>
 
     <script>
-        /************************************************************************
-         * بيانات المراحل
-         ************************************************************************/
         const levelsData = [
-            { id: 1, image: "1.png", words: ["ماستر", "راتب"] },
+            { id: 1, image: "1.png", words: ["راتب", "ماستر", "كي", "فلوس", "برنامج"] },
             { id: 2, image: "image_3d675b.jpg", words: ["مرساة", "سفينة", "بحر"] },
-            { id: 3, image: "https://placehold.co/400x300/475569/ffffff?text=الحاسوب", words: ["شاشة", "لوحة", "مفتاح"] },
+            { id: 3, image: "https://placehold.co/400x300/475569/ffffff?text=الحاسوب", words: ["ماستر", "شاشة", "مفتاح"] },
             { id: 4, image: "https://placehold.co/400x300/0f172a/ffffff?text=الفضاء", words: ["كوكب", "نجم", "مجرة"] },
             { id: 5, image: "https://placehold.co/400x300/1e1b4b/ffffff?text=العلوم", words: ["فيزياء", "طاقة", "حركة"] },
             { id: 6, image: "https://placehold.co/400x300/312e81/ffffff?text=مرحلة+6", words: ["نار", "حطب", "دفء"] },
@@ -401,19 +404,20 @@
             
             currentLevel.words.forEach((word, wordIndex) => {
                 const isFound = foundWords.includes(word);
-                
-                const wordGroup = document.createElement('div');
-                wordGroup.className = 'word-group' + (isFound ? ` solved-${wordIndex % 5}` : '');
+                const wordCapsule = document.createElement('div');
 
-                for (let i = 0; i < word.length; i++) {
-                    const slot = document.createElement('div');
-                    slot.className = 'word-slot';
-                    if (isFound) {
-                        slot.innerText = word[i];
+                if (isFound) {
+                    wordCapsule.className = `word-capsule solved-${wordIndex % 5}`;
+                    wordCapsule.innerText = word; 
+                } else {
+                    wordCapsule.className = 'word-capsule unsolved';
+                    for (let i = 0; i < word.length; i++) {
+                        const slot = document.createElement('div');
+                        slot.className = 'empty-slot';
+                        wordCapsule.appendChild(slot);
                     }
-                    wordGroup.appendChild(slot);
                 }
-                wordsContainer.appendChild(wordGroup);
+                wordsContainer.appendChild(wordCapsule);
             });
         }
 
@@ -443,8 +447,9 @@
                         btn.className = 'letter-btn';
                         btn.innerText = char;
                     } else {
-                        // إظهار المربعات الفارغة الشفافة بدلاً من إخفائها كلياً
+                        // إضافة الخلية الفارغة
                         btn.className = 'letter-btn empty-cell'; 
+                        btn.innerText = '';
                     }
                     lettersGrid.appendChild(btn);
                 }
@@ -462,7 +467,7 @@
             }
             
             const element = document.elementFromPoint(clientX, clientY);
-            // التأكد من أن المربع يحتوي على حرف وليس مربعاً فارغاً (empty-cell)
+            // تجاهل الخلايا الفارغة
             if (element && element.classList.contains('letter-btn') && !element.classList.contains('empty-cell')) {
                 return parseInt(element.dataset.index);
             }
@@ -516,11 +521,10 @@
         }
 
         function updateGridVisuals() {
-            const cells = lettersGrid.querySelectorAll('.letter-btn:not(.empty-cell)');
+            const cells = lettersGrid.querySelectorAll('.letter-btn');
             cells.forEach((cell, idx) => {
                 cell.classList.remove('selected');
-                // تلوين المسار المحدد
-                if (selectedPath.includes(parseInt(cell.dataset.index))) {
+                if (selectedPath.includes(idx)) {
                     cell.classList.add('selected');
                 }
             });
@@ -544,9 +548,9 @@
                 selectedPath.forEach(idx => {
                     solvedCells.push(idx);
                     const cellEl = document.getElementById(`cell-${idx}`);
-                    // إضافة صنف التلوين بدلاً من الإخفاء
-                    cellEl.classList.add(`solved-${wordIndex % 5}`); 
+                    // تلوين الخلية بدلاً من إخفائها وإزالة التحديد الأصفر
                     cellEl.classList.remove('selected');
+                    cellEl.classList.add(`found-${wordIndex % 5}`); 
                 });
                 
                 renderWordSlots();
@@ -585,7 +589,6 @@
             };
         }
 
-        // Event Listeners
         lettersGrid.addEventListener('mousedown', startDrag);
         window.addEventListener('mousemove', moveDrag);
         window.addEventListener('mouseup', endDrag);
