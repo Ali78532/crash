@@ -328,24 +328,84 @@
             screenGame.classList.add('active');
         }
 
+        // دالة للتحقق من أن كل كلمة لها مسار واحد فقط (لا يوجد تداخل)
+        function isBoardUnambiguous(words) {
+            for (let word of words) {
+                let paths = findAllPathsForWord(word);
+                let uniqueCellSets = new Set();
+                
+                for (let path of paths) {
+                    // نرتب أرقام الخلايا لضمان أن المسار المعكوس يعتبر نفس المسار ولا يعتبر مساراً ثانياً
+                    uniqueCellSets.add(path.slice().sort((a, b) => a - b).join(','));
+                }
+                
+                // إذا كان هناك أكثر من مجموعة واحدة من الخلايا تكون هذه الكلمة، فالترتيب فاشل
+                if (uniqueCellSets.size > 1) {
+                    return false; 
+                }
+            }
+            return true;
+        }
+
+        // دالة للبحث عن جميع المسارات الممكنة لكلمة معينة داخل الشبكة
+        function findAllPathsForWord(word) {
+            let paths = [];
+            for (let r = 0; r < gridRows; r++) {
+                for (let c = 0; c < gridCols; c++) {
+                    if (generatedGrid[r][c] === word[0]) {
+                        findPathsDFS(word, 0, r, c, [], paths);
+                    }
+                }
+            }
+            return paths;
+        }
+
+        // دالة التتبع (DFS) لإيجاد الكلمة
+        function findPathsDFS(word, charIndex, r, c, currentPath, allPaths) {
+            currentPath.push(r * gridCols + c);
+            
+            if (charIndex === word.length - 1) {
+                allPaths.push([...currentPath]);
+            } else {
+                let dirs = [[0,1], [0,-1], [1,0], [-1,0]];
+                for (let d of dirs) {
+                    let nr = r + d[0], nc = c + d[1];
+                    if (nr >= 0 && nr < gridRows && nc >= 0 && nc < gridCols) {
+                        // التأكد من عدم استخدام نفس الحرف مرتين ومن مطابقة الحرف التالي
+                        if (!currentPath.includes(nr * gridCols + nc) && generatedGrid[nr][nc] === word[charIndex + 1]) {
+                            findPathsDFS(word, charIndex + 1, nr, nc, currentPath, allPaths);
+                        }
+                    }
+                }
+            }
+            
+            currentPath.pop();
+        }
+
         function generateDynamicGrid(words) {
             let totalChars = words.reduce((sum, word) => sum + word.length, 0);
             
             gridCols = Math.ceil(Math.sqrt(totalChars));
             gridRows = Math.ceil(totalChars / gridCols);
 
-            let maxAttempts = 1000;
+            let maxAttempts = 2000;
             let success = false;
 
             while (maxAttempts > 0 && !success) {
                 generatedGrid = Array(gridRows).fill(null).map(() => Array(gridCols).fill(null));
                 
                 if (placeAllWordsDFS(words, 0)) {
-                    success = true;
-                } else {
+                    // === هنا الفحص الجديد ===
+                    // نتحقق مما إذا كان الترتيب يمتلك طريقاً واحداً فقط لكل كلمة
+                    if (isBoardUnambiguous(words)) {
+                        success = true;
+                    }
+                }
+                
+                if (!success) {
                     maxAttempts--;
-                    if (maxAttempts === 500) gridCols++;
-                    if (maxAttempts === 200) gridRows++;
+                    if (maxAttempts === 1000) gridCols++;
+                    if (maxAttempts === 500) gridRows++;
                 }
             }
 
