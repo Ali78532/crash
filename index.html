@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>لعبة الكلمات - شبكة ديناميكية</title>
+    <title>كلمات كراش</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     
@@ -91,24 +91,24 @@
             aspect-ratio: 1 / 1;
         }
 
-        /* المربعات الفارغة (نفس الشكل بدون تفاعل) */
+        /* المربعات الفارغة */
         .letter-btn.empty-cell {
             pointer-events: none;
             cursor: default;
         }
 
-        .letter-btn:active, .letter-btn.selected {
+        .letter-btn[class*="selected-"] {
             transform: translateY(3px) scale(0.96);
-            box-shadow: 0 0 0 transparent;
         }
 
-        .letter-btn.selected {
-            background-color: #fcd34d !important;
-            color: #78350f !important;
-            box-shadow: 0 4px 0 #d97706 !important;
-        }
+        /* ألوان السحب الثابتة (تتغير حسب عدد الكلمات المستخرجة) */
+        .letter-btn.selected-0 { background-color: #4ade80 !important; color: #052e16 !important; box-shadow: 0 2px 0 #16a34a !important; }
+        .letter-btn.selected-1 { background-color: #f472b6 !important; color: #4c0519 !important; box-shadow: 0 2px 0 #db2777 !important; }
+        .letter-btn.selected-2 { background-color: #60a5fa !important; color: #0f172a !important; box-shadow: 0 2px 0 #2563eb !important; }
+        .letter-btn.selected-3 { background-color: #c084fc !important; color: #2e1065 !important; box-shadow: 0 2px 0 #9333ea !important; }
+        .letter-btn.selected-4 { background-color: #fb923c !important; color: #431407 !important; box-shadow: 0 2px 0 #ea580c !important; }
 
-        /* ألوان الحروف بعد حلها (تتطابق مع ألوان الكبسولات) */
+        /* ألوان الحروف بعد حلها */
         .letter-btn.found-0 { background: #4ade80; color: #052e16; box-shadow: 0 4px 0 #16a34a; pointer-events: none; }
         .letter-btn.found-1 { background: #f472b6; color: #4c0519; box-shadow: 0 4px 0 #db2777; pointer-events: none; }
         .letter-btn.found-2 { background: #60a5fa; color: #0f172a; box-shadow: 0 4px 0 #2563eb; pointer-events: none; }
@@ -207,7 +207,7 @@
     <div id="app-container">
         
         <div id="level-select-screen" class="screen active p-4">
-            <h1 class="text-4xl font-black text-white text-center mt-8 mb-6 drop-shadow-lg text-blue-200">خريطة المراحل</h1>
+            <h1 class="text-4xl font-black text-white text-center mt-8 mb-6 drop-shadow-lg text-blue-200">اختر المرحلة</h1>
             <div id="levels-container" class="grid grid-cols-3 gap-3 px-1">
             </div>
         </div>
@@ -244,13 +244,13 @@
     <script>
         const levelsData = [
             { id: 1, image: "s.jpg", words: ["نرجس", "عنكبوت", "سبايدرمان", "رسم"] },
-            { id: 2, image: "kgame.jpg", words: ["كيان", "أبوإذان", "ألعاب"] },
+            { id: 2, image: "kgame.jpg", words: ["كيان", "أبوإذان", "ألعاب", "مزلحانة"] },
             { id: 3, image: "no.jpg", words: ["فطومة", "نونو", "طفلة"] },
             { id: 4, image: "k.jpg", words: ["كيكة", "عيدميلاد", "نمر", "كيوني"] },
-            { id: 5, image: "b.jpg", words: ["بلبل", "قفص", "طير"] },
+            { id: 5, image: "b.png", words: ["بلبل", "قفص", "طير"] },
             { id: 6, image: "nt.jpg", words: ["تسريحة", "شعر", "ظفيرة", "صدرية"] },
-            { id: 7, image: "sbh.jpg", words: ["سبح", "ماء", "حوض", "أطفال"] },
-            { id: 8, image: "d.jpg", words: ["دني", "كيان", "ملابس", "حشد"] },
+            { id: 7, image: "sbh.jpg", words: ["مسبح", "ماء", "حوض", "أطفال"] },
+            { id: 8, image: "d.jpg", words: ["جني", "كيان", "ملابس", "حشد"] },
             { id: 9, image: "nm.jpg", words: ["نرجوسة", "ماطور", "شحن"] },
             { id: 10, image: "r.jpg", words: ["رفل", "نرجس", "بنات", "جبل", "سفرة"] }
         ];
@@ -271,6 +271,16 @@
         const levelsContainer = document.getElementById('levels-container');
         const lettersGrid = document.getElementById('letters-grid');
         const wordsContainer = document.getElementById('words-container');
+
+        // تحميل الصور مسبقاً وبالتسلسل من مرحلة 1 وصاعداً
+        function preloadImagesSequentially(index = 0) {
+            if (index >= levelsData.length) return;
+            const img = new Image();
+            img.src = levelsData[index].image;
+            img.onload = img.onerror = () => {
+                preloadImagesSequentially(index + 1);
+            };
+        }
 
         function showLevelSelect() {
             screenGame.classList.remove('active');
@@ -301,8 +311,26 @@
             isDragging = false;
 
             document.getElementById('level-display').innerText = `مرحلة ${currentLevelIndex + 1}`;
-            document.getElementById('puzzle-image').src = level.image;
             
+            // إخفاء الصورة القديمة فوراً لتجنب إظهارها أثناء الانتظار
+            const puzzleImg = document.getElementById('puzzle-image');
+            puzzleImg.style.visibility = 'hidden';
+            puzzleImg.src = '';
+
+            // عرض الصورة فور تجهزها
+            const tempImg = new Image();
+            tempImg.src = level.image;
+            tempImg.onload = () => {
+                if (currentLevelIndex === index) {
+                    puzzleImg.src = level.image;
+                    puzzleImg.style.visibility = 'visible';
+                }
+            };
+            if (tempImg.complete && tempImg.naturalWidth !== 0) {
+                puzzleImg.src = level.image;
+                puzzleImg.style.visibility = 'visible';
+            }
+
             generateDynamicGrid(level.words);
             renderWordSlots();
             renderGridUI();
@@ -402,12 +430,14 @@
             wordsContainer.innerHTML = '';
             const currentLevel = levelsData[currentLevelIndex];
             
-            currentLevel.words.forEach((word, wordIndex) => {
-                const isFound = foundWords.includes(word);
+            currentLevel.words.forEach((word) => {
+                // البحث عن ترتيب استخراج الكلمة لمعرفة لونها
+                const foundIndex = foundWords.indexOf(word);
                 const wordCapsule = document.createElement('div');
 
-                if (isFound) {
-                    wordCapsule.className = `word-capsule solved-${wordIndex % 5}`;
+                if (foundIndex !== -1) {
+                    // تلوين الكبسولة حسب ترتيب اكتشافها
+                    wordCapsule.className = `word-capsule solved-${foundIndex % 5}`;
                     wordCapsule.innerText = word; 
                 } else {
                     wordCapsule.className = 'word-capsule unsolved';
@@ -447,7 +477,6 @@
                         btn.className = 'letter-btn';
                         btn.innerText = char;
                     } else {
-                        // إضافة الخلية الفارغة
                         btn.className = 'letter-btn empty-cell'; 
                         btn.innerText = '';
                     }
@@ -467,7 +496,6 @@
             }
             
             const element = document.elementFromPoint(clientX, clientY);
-            // تجاهل الخلايا الفارغة
             if (element && element.classList.contains('letter-btn') && !element.classList.contains('empty-cell')) {
                 return parseInt(element.dataset.index);
             }
@@ -521,11 +549,14 @@
         }
 
         function updateGridVisuals() {
+            // اللون يكون ثابتاً ويعتمد فقط على عدد الكلمات التي وجدتها مسبقاً
+            const colorIndex = foundWords.length % 5;
+
             const cells = lettersGrid.querySelectorAll('.letter-btn');
             cells.forEach((cell, idx) => {
-                cell.classList.remove('selected');
+                cell.classList.remove('selected-0', 'selected-1', 'selected-2', 'selected-3', 'selected-4');
                 if (selectedPath.includes(idx)) {
-                    cell.classList.add('selected');
+                    cell.classList.add(`selected-${colorIndex}`);
                 }
             });
         }
@@ -540,17 +571,21 @@
             }).join('');
             
             const currentLevel = levelsData[currentLevelIndex];
-            const wordIndex = currentLevel.words.indexOf(currentWord);
 
-            if (wordIndex !== -1 && !foundWords.includes(currentWord)) {
+            // التأكد أن الكلمة موجودة في القائمة ولم يتم استخراجها بعد
+            if (currentLevel.words.includes(currentWord) && !foundWords.includes(currentWord)) {
+                
+                // حفظ ترتيب اللون قبل الإضافة للمصفوفة
+                const extractedColorIndex = foundWords.length % 5;
                 foundWords.push(currentWord);
                 
                 selectedPath.forEach(idx => {
                     solvedCells.push(idx);
                     const cellEl = document.getElementById(`cell-${idx}`);
-                    // تلوين الخلية بدلاً من إخفائها وإزالة التحديد الأصفر
-                    cellEl.classList.remove('selected');
-                    cellEl.classList.add(`found-${wordIndex % 5}`); 
+                    cellEl.classList.remove('selected-0', 'selected-1', 'selected-2', 'selected-3', 'selected-4');
+                    
+                    // تلوين الحروف في الشبكة حسب ترتيب الاكتشاف
+                    cellEl.classList.add(`found-${extractedColorIndex}`); 
                 });
                 
                 renderWordSlots();
@@ -563,7 +598,7 @@
 
         function showSuccessMessage() {
             const isLastLevel = (currentLevelIndex === levelsData.length - 1);
-            const buttonText = isLastLevel ? "العودة للخريطة" : "التالي";
+            const buttonText = isLastLevel ? "عودة" : "التالي";
             
             const msgBox = document.createElement('div');
             msgBox.id = 'success-popup';
@@ -601,6 +636,7 @@
         window.onload = () => {
             renderLevelSelect();
             showLevelSelect(); 
+            preloadImagesSequentially(0);
         };
 
     </script>
