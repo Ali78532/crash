@@ -14,7 +14,9 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            /* استخدام dvh لحل مشكلة شريط المتصفح في الهواتف */
+            height: 100vh; 
+            height: 100dvh; 
             margin: 0;
             overflow: hidden;
             touch-action: manipulation;
@@ -26,7 +28,7 @@
             width: 100%;
             max-width: 420px;
             height: 100vh;
-            max-height: 900px;
+            height: 100dvh;
             background: linear-gradient(180deg, #0f4c75 0%, #1b262c 100%);
             position: relative;
             display: flex;
@@ -91,7 +93,6 @@
             aspect-ratio: 1 / 1;
         }
 
-        /* المربعات الفارغة */
         .letter-btn.empty-cell {
             pointer-events: none;
             cursor: default;
@@ -101,21 +102,21 @@
             transform: translateY(3px) scale(0.96);
         }
 
-        /* ألوان السحب الثابتة (تتغير حسب عدد الكلمات المستخرجة) */
+        /* ألوان السحب */
         .letter-btn.selected-0 { background-color: #4ade80 !important; color: #052e16 !important; box-shadow: 0 2px 0 #16a34a !important; }
         .letter-btn.selected-1 { background-color: #f472b6 !important; color: #4c0519 !important; box-shadow: 0 2px 0 #db2777 !important; }
         .letter-btn.selected-2 { background-color: #60a5fa !important; color: #0f172a !important; box-shadow: 0 2px 0 #2563eb !important; }
         .letter-btn.selected-3 { background-color: #c084fc !important; color: #2e1065 !important; box-shadow: 0 2px 0 #9333ea !important; }
         .letter-btn.selected-4 { background-color: #fb923c !important; color: #431407 !important; box-shadow: 0 2px 0 #ea580c !important; }
 
-        /* ألوان الحروف بعد حلها */
+        /* ألوان الإجابات الصحيحة */
         .letter-btn.found-0 { background: #4ade80; color: #052e16; box-shadow: 0 4px 0 #16a34a; pointer-events: none; }
         .letter-btn.found-1 { background: #f472b6; color: #4c0519; box-shadow: 0 4px 0 #db2777; pointer-events: none; }
         .letter-btn.found-2 { background: #60a5fa; color: #0f172a; box-shadow: 0 4px 0 #2563eb; pointer-events: none; }
         .letter-btn.found-3 { background: #c084fc; color: #2e1065; box-shadow: 0 4px 0 #9333ea; pointer-events: none; }
         .letter-btn.found-4 { background: #fb923c; color: #431407; box-shadow: 0 4px 0 #ea580c; pointer-events: none; }
 
-        /* منطقة الكلمات المطلوبة */
+        /* منطقة الكلمات */
         #words-container {
             display: flex;
             flex-wrap: wrap;
@@ -128,7 +129,6 @@
             margin-bottom: 6px;
         }
 
-        /* شكل الكلمة (كبسولة صغيرة) */
         .word-capsule {
             display: inline-flex;
             justify-content: center;
@@ -163,7 +163,6 @@
             100% { transform: scale(1); }
         }
 
-        /* ألوان الكبسولات */
         .word-capsule.solved-0 { background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%); color: #052e16; border: 1px solid #86efac; box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3); animation: popIn 0.3s ease; }
         .word-capsule.solved-1 { background: linear-gradient(180deg, #f472b6 0%, #db2777 100%); color: #4c0519; border: 1px solid #fbcfe8; box-shadow: 0 2px 6px rgba(219, 39, 119, 0.3); animation: popIn 0.3s ease; }
         .word-capsule.solved-2 { background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%); color: #0f172a; border: 1px solid #bfdbfe; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3); animation: popIn 0.3s ease; }
@@ -180,26 +179,6 @@
             display: flex;
         }
 
-        #game-layout {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            justify-content: space-between;
-        }
-
-        #top-section {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-height: 0; 
-        }
-        
-        #bottom-section {
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            padding-bottom: 20px;
-        }
     </style>
 </head>
 <body>
@@ -212,26 +191,34 @@
             </div>
         </div>
 
-        <div id="game-screen" class="screen h-full">
-            <div id="game-layout">
+        <div id="game-screen" class="screen h-full w-full">
+            <!-- استخدام Flexbox بحيث تأخذ الصورة المساحة المتبقية فقط ولا تدفع الحروف -->
+            <div class="flex flex-col h-full w-full justify-between">
                 
-                <div id="top-section">
-                    <div class="flex justify-between items-center p-4 text-white font-bold text-lg z-10 shrink-0">
-                        <div class="w-12"></div>
-                        <div id="level-display" class="text-3xl drop-shadow-md font-black text-blue-200">مرحلة 1</div>
-                        <button onclick="showLevelSelect()" class="w-12 h-12 bg-blue-400 rounded-full flex items-center justify-center border-4 border-blue-200 shadow-lg text-white text-2xl transition-transform active:scale-95">
-                            🗺️
-                        </button>
-                    </div>
+                <!-- الشريط العلوي -->
+                <div class="flex justify-between items-center p-3 text-white font-bold text-lg z-10 shrink-0">
+                    <!-- زر الإعادة (يمين الشاشة) -->
+                    <button onclick="restartCurrentLevel()" class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center border-4 border-red-300 shadow-lg text-white text-2xl transition-transform active:scale-95 pb-1">
+                        🔄
+                    </button>
 
-                    <div class="w-full px-4 flex justify-center items-center flex-grow p-2 overflow-hidden">
-                        <img id="puzzle-image" src="" alt="صورة اللغز" class="max-w-full max-h-full object-contain filter drop-shadow-xl rounded-xl border-2 border-white/10 bg-white/5">
-                    </div>
+                    <div id="level-display" class="text-3xl drop-shadow-md font-black text-blue-200">مرحلة 1</div>
+                    
+                    <!-- زر الخريطة (يسار الشاشة) -->
+                    <button onclick="showLevelSelect()" class="w-12 h-12 bg-blue-400 rounded-full flex items-center justify-center border-4 border-blue-200 shadow-lg text-white text-2xl transition-transform active:scale-95">
+                        🗺️
+                    </button>
                 </div>
 
-                <div id="bottom-section" class="px-3">
+                <!-- قسم الصورة (يصغر تلقائياً إذا كانت الشاشة صغيرة لضمان ظهور الحروف) -->
+                <div class="flex-1 min-h-0 w-full px-4 flex justify-center items-center pb-2">
+                    <img id="puzzle-image" src="" alt="صورة اللغز" class="max-w-full max-h-full object-contain filter drop-shadow-xl rounded-xl border-2 border-white/10 bg-white/5">
+                </div>
+
+                <!-- قسم الحروف والكلمات (لا يصغر أبداً shrink-0 ليبقى ظاهراً بالكامل) -->
+                <div class="shrink-0 w-full pb-6 px-3">
                     <div id="words-container"></div>
-                    <div class="flex flex-col justify-center items-center w-full mt-2">
+                    <div class="flex flex-col justify-center items-center w-full mt-1">
                         <div id="letters-grid"></div>
                     </div>
                 </div>
@@ -272,7 +259,6 @@
         const lettersGrid = document.getElementById('letters-grid');
         const wordsContainer = document.getElementById('words-container');
 
-        // تحميل الصور مسبقاً وبالتسلسل من مرحلة 1 وصاعداً
         function preloadImagesSequentially(index = 0) {
             if (index >= levelsData.length) return;
             const img = new Image();
@@ -300,6 +286,11 @@
             });
         }
 
+        // دالة إعادة المرحلة الحالية
+        function restartCurrentLevel() {
+            loadLevel(currentLevelIndex);
+        }
+
         function loadLevel(index) {
             if (index < 0 || index >= levelsData.length) return;
             currentLevelIndex = index;
@@ -312,12 +303,10 @@
 
             document.getElementById('level-display').innerText = `مرحلة ${currentLevelIndex + 1}`;
             
-            // إخفاء الصورة القديمة فوراً لتجنب إظهارها أثناء الانتظار
             const puzzleImg = document.getElementById('puzzle-image');
             puzzleImg.style.visibility = 'hidden';
             puzzleImg.src = '';
 
-            // عرض الصورة فور تجهزها
             const tempImg = new Image();
             tempImg.src = level.image;
             tempImg.onload = () => {
@@ -431,12 +420,10 @@
             const currentLevel = levelsData[currentLevelIndex];
             
             currentLevel.words.forEach((word) => {
-                // البحث عن ترتيب استخراج الكلمة لمعرفة لونها
                 const foundIndex = foundWords.indexOf(word);
                 const wordCapsule = document.createElement('div');
 
                 if (foundIndex !== -1) {
-                    // تلوين الكبسولة حسب ترتيب اكتشافها
                     wordCapsule.className = `word-capsule solved-${foundIndex % 5}`;
                     wordCapsule.innerText = word; 
                 } else {
@@ -549,9 +536,7 @@
         }
 
         function updateGridVisuals() {
-            // اللون يكون ثابتاً ويعتمد فقط على عدد الكلمات التي وجدتها مسبقاً
             const colorIndex = foundWords.length % 5;
-
             const cells = lettersGrid.querySelectorAll('.letter-btn');
             cells.forEach((cell, idx) => {
                 cell.classList.remove('selected-0', 'selected-1', 'selected-2', 'selected-3', 'selected-4');
@@ -572,10 +557,8 @@
             
             const currentLevel = levelsData[currentLevelIndex];
 
-            // التأكد أن الكلمة موجودة في القائمة ولم يتم استخراجها بعد
             if (currentLevel.words.includes(currentWord) && !foundWords.includes(currentWord)) {
                 
-                // حفظ ترتيب اللون قبل الإضافة للمصفوفة
                 const extractedColorIndex = foundWords.length % 5;
                 foundWords.push(currentWord);
                 
@@ -583,8 +566,6 @@
                     solvedCells.push(idx);
                     const cellEl = document.getElementById(`cell-${idx}`);
                     cellEl.classList.remove('selected-0', 'selected-1', 'selected-2', 'selected-3', 'selected-4');
-                    
-                    // تلوين الحروف في الشبكة حسب ترتيب الاكتشاف
                     cellEl.classList.add(`found-${extractedColorIndex}`); 
                 });
                 
